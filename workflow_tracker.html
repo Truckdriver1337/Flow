@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow Tracker - Daily Workflow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Satoshi:wght@400;500;700;900&family=Space+Grotesk:wght@600;700&display=swap');
+
+        :root {
+            --bg: #0f0f0f;
+            --surface: #1a1a1a;
+            --accent: #00d9ff;
+            --accent-warm: #ff6b35;
+            --accent-cool: #00d9ff;
+            --success: #00ff88;
+            --text: #ffffff;
+            --text-dim: #a0a0a0;
+            --progress-bg: #2a2a2a;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a0f2e 100%);
+            color: var(--text);
+            font-family: 'Satoshi', sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, var(--accent-cool), var(--accent-warm));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .date-display {
+            font-size: 13px;
+            color: var(--text-dim);
+            letter-spacing: 0.5px;
+        }
+
+        /* Current Block Display */
+        .current-block {
+            background: linear-gradient(135deg, #1a1a1a 0%, #252a3a 100%);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.8s ease-out 0.2s both;
+        }
+
+        .current-block::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(0, 217, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .current-block::after {
+            content: 'ACTIVE';
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--success);
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .block-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .block-emoji {
+            font-size: 32px;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .timer-section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .elapsed-time {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 42px;
+            font-weight: 700;
+            text-align: center;
+            color: var(--accent-cool);
+            margin-bottom: 8px;
+            letter-spacing: -2px;
+        }
+
+        .time-label {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-dim);
+            letter-spacing: 0.5px;
+        }
+
+        .block-buttons {
+            display: flex;
+            gap: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Satoshi', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .btn-finish {
+            background: linear-gradient(135deg, var(--accent-cool), #00b8d4);
+            color: #000;
+            border: none;
+        }
+
+        .btn-finish:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(0, 217, 255, 0.3);
+        }
+
+        /* Day Overview */
+        .day-overview {
+            margin-bottom: 32px;
+            animation: fadeIn 0.8s ease-out 0.4s both;
+        }
+
+        .overview-title {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .blocks-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid var(--text-dim);
+            transition: all 0.3s ease;
+        }
+
+        .timeline-item.completed {
+            background: rgba(0, 255, 136, 0.1);
+            border-left-color: var(--success);
+        }
+
+        .timeline-item.active {
+            background: rgba(0, 217, 255, 0.15);
+            border-left-color: var(--accent-cool);
+            transform: translateX(4px);
+        }
+
+        .timeline-item.upcoming {
+            background: rgba(255, 255, 255, 0.02);
+            border-left-color: var(--text-dim);
+        }
+
+        .timeline-item.completed .item-emoji {
+            filter: brightness(1.2);
+        }
+
+        .item-emoji {
+            font-size: 20px;
+            min-width: 24px;
+        }
+
+        .item-name {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .item-status {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .timeline-item.completed .item-status {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .timeline-item.upcoming,
+        .timeline-item.completed {
+            cursor: pointer;
+        }
+
+        .timeline-item.upcoming:hover,
+        .timeline-item.completed:hover {
+            background: rgba(0, 217, 255, 0.1);
+            transform: translateX(4px);
+        }
+
+        /* Start Day Screen */
+        .start-day-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .start-day-content {
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .start-emoji {
+            font-size: 80px;
+            margin-bottom: 30px;
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .start-title {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 12px;
+            background: linear-gradient(90deg, var(--accent-cool), var(--accent-warm));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .start-subtitle {
+            font-size: 14px;
+            color: var(--text-dim);
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .block-selector {
+            background: linear-gradient(135deg, #1a1a1a 0%, #252a3a 100%);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 24px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .block-selector-title {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .selector-item {
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 217, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+        }
+
+        .selector-item:hover {
+            background: rgba(0, 217, 255, 0.15);
+            border-color: var(--accent-cool);
+            transform: translateX(4px);
+        }
+
+        .selector-item.selected {
+            background: rgba(0, 217, 255, 0.2);
+            border-color: var(--accent-cool);
+            color: var(--accent-cool);
+            font-weight: 600;
+        }
+
+        .btn-start-day {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent-cool), var(--accent-warm));
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-start-day:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(0, 217, 255, 0.3);
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        /* Suggestions Checklist */
+        .suggestions-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .suggestions-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .suggestions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .suggestion-item {
+            font-size: 12px;
+            color: var(--text);
+            padding: 6px 8px;
+            background: rgba(0, 217, 255, 0.1);
+            border-left: 2px solid var(--accent-cool);
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(0, 217, 255, 0.15);
+            transform: translateX(2px);
+        }
+
+        .suggestion-item::before {
+            content: '✓ ';
+            color: var(--success);
+            font-weight: 700;
+            margin-right: 4px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: flex-end;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a1a 0%, #252a3a 100%);
+            border-top: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 20px 20px 0 0;
+            padding: 24px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-dim);
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'Satoshi', sans-serif;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-cool);
+            background: rgba(0, 217, 255, 0.05);
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.1);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 24px;
+        }
+
+        .btn-cancel {
+            flex: 1;
+            background: transparent;
+            color: var(--text-dim);
+            border: 1px solid var(--text-dim);
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-submit {
+            flex: 1;
+            background: linear-gradient(135deg, var(--success), #00dd77);
+            color: #000;
+            border: none;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(0, 255, 136, 0.2);
+        }
+
+        /* Completion Animation */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            }
+            50% {
+                text-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
+            }
+        }
+
+        @keyframes celebrate {
+            0% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .confetti {
+            position: fixed;
+            pointer-events: none;
+            animation: celebrate 1.5s ease-out forwards;
+        }
+
+        /* Summary */
+        .summary-container {
+            background: linear-gradient(135deg, #1a1a1a 0%, #252a3a 100%);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .summary-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent-cool);
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-item {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-block-name {
+            font-weight: 600;
+            color: var(--accent-warm);
+        }
+
+        .btn-download {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--accent-cool), var(--accent-warm));
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            margin-bottom: 40px;
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(0, 217, 255, 0.3);
+        }
+
+        /* End of Day */
+        .end-of-day {
+            text-align: center;
+            padding: 40px 20px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .celebration-emoji {
+            font-size: 60px;
+            margin-bottom: 20px;
+            display: inline-block;
+            animation: celebrate 1s ease-out;
+        }
+
+        .end-message {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .end-subtitle {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-bottom: 30px;
+        }
+
+        .btn-reset {
+            padding: 12px 24px;
+            background: rgba(0, 217, 255, 0.2);
+            color: var(--accent-cool);
+            border: 1px solid var(--accent-cool);
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-reset:hover {
+            background: rgba(0, 217, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 380px) {
+            .elapsed-time {
+                font-size: 36px;
+            }
+            .current-block {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">⚡ FLOW</div>
+            <div class="date-display" id="dateDisplay"></div>
+        </div>
+
+        <div id="mainContent">
+            <!-- Current Block will be inserted here -->
+        </div>
+    </div>
+
+    <!-- Modal for documentation -->
+    <div class="modal" id="documentationModal">
+        <div class="modal-content">
+            <div class="modal-title">📝 What did you accomplish?</div>
+            <form id="documentationForm">
+                <div class="form-group">
+                    <label class="form-label">Document your work in this block</label>
+                    <textarea id="blockNotes" placeholder="Tests created, bugs fixed, issues discovered..."></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-cancel" onclick="closeModal()">Back</button>
+                    <button type="submit" class="btn btn-submit">Save & Next</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Data structure
+        const blocks = [
+            { name: 'Morning Check & Queue', emoji: '📋', description: 'Check overnight results, queue long tasks', suggestions: ['Review test results', 'Check for new failures', 'Trigger regression tests'] },
+            { name: 'Deep Work: Test Creation', emoji: '✍️', description: 'Write new automated tests', suggestions: ['Write test cases', 'Refactor test code', 'Add test documentation'] },
+            { name: 'Investigate Issue #1', emoji: '🔍', description: 'Debug and gather data', suggestions: ['Reproduce issue', 'Gather logs/traces', 'Document findings'] },
+            { name: 'Retest Bugs: Batch 1', emoji: '🧪', description: 'Test bug fixes', suggestions: ['Run test scenarios', 'Check edge cases', 'Document results'] },
+            { name: 'Lunch Break', emoji: '🍽️', description: 'Step away & recharge', suggestions: ['Take a break', 'Stretch & move', 'Recharge'] },
+            { name: 'Deep Work: Create/Refactor', emoji: '✨', description: 'Test creation or refactoring', suggestions: ['Write/refactor tests', 'Organize test utilities', 'Add parameterized tests'] },
+            { name: 'Investigate Issue #2', emoji: '🔍', description: 'Debug and gather data', suggestions: ['Reproduce issue', 'Gather logs/traces', 'Document findings'] },
+            { name: 'Retest Bugs: Batch 2', emoji: '🧪', description: 'Test bug fixes', suggestions: ['Run test scenarios', 'Check edge cases', 'Document results'] },
+            { name: 'Close-Out & Plan', emoji: '📌', description: 'Wrap up and prep tomorrow', suggestions: ['Update results tracker', 'Document findings', 'Plan tomorrow\'s queue'] }
+        ];
+
+        let currentBlockIndex = 0;
+        let blockStartTime = null;
+        let timerInterval = null;
+        let completedBlocks = [];
+        let blockElapsedTime = 0; // Track elapsed time across sessions
+        let dayStarted = false;
+        let selectedStartBlock = 0;
+
+        // Initialize
+        function init() {
+            updateDate();
+            loadFromStorage();
+            
+            if (dayStarted) {
+                renderCurrentBlock();
+                startTimer();
+            } else {
+                renderStartDay();
+            }
+        }
+
+        function saveToStorage() {
+            const state = {
+                currentBlockIndex,
+                completedBlocks,
+                blockElapsedTime,
+                dayStarted,
+                date: new Date().toISOString().split('T')[0]
+            };
+            localStorage.setItem('flowTrackerState', JSON.stringify(state));
+        }
+
+        function loadFromStorage() {
+            const saved = localStorage.getItem('flowTrackerState');
+            if (saved) {
+                try {
+                    const state = JSON.parse(saved);
+                    // Only load if it's from today
+                    const today = new Date().toISOString().split('T')[0];
+                    if (state.date === today) {
+                        currentBlockIndex = state.currentBlockIndex;
+                        completedBlocks = state.completedBlocks;
+                        blockElapsedTime = state.blockElapsedTime;
+                        dayStarted = state.dayStarted || false;
+                    }
+                } catch (e) {
+                    console.error('Failed to load saved state:', e);
+                }
+            }
+        }
+
+        function updateDate() {
+            const now = new Date();
+            const formatted = now.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            document.getElementById('dateDisplay').textContent = formatted;
+        }
+
+        function renderStartDay() {
+            const mainContent = document.getElementById('mainContent');
+            
+            let blockOptions = '';
+            blocks.forEach((block, idx) => {
+                const isSelected = idx === selectedStartBlock ? 'selected' : '';
+                blockOptions += `
+                    <div class="selector-item ${isSelected}" onclick="selectStartBlock(${idx})">
+                        <span>${block.emoji} ${block.name}</span>
+                    </div>
+                `;
+            });
+
+            mainContent.innerHTML = `
+                <div class="start-day-screen">
+                    <div class="start-day-content">
+                        <div class="start-emoji">⚡</div>
+                        <div class="start-title">Ready to Flow?</div>
+                        <div class="start-subtitle">Choose where you want to start today</div>
+                        
+                        <div class="block-selector">
+                            <div class="block-selector-title">Select Starting Block</div>
+                            ${blockOptions}
+                        </div>
+
+                        <button class="btn-start-day" onclick="startDay()">Start Day</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectStartBlock(idx) {
+            selectedStartBlock = idx;
+            renderStartDay();
+        }
+
+        function jumpToBlock(idx) {
+            if (idx !== currentBlockIndex) {
+                currentBlockIndex = idx;
+                blockStartTime = null;
+                saveToStorage();
+                renderCurrentBlock();
+            }
+        }
+
+        function startDay() {
+            dayStarted = true;
+            currentBlockIndex = selectedStartBlock;
+            completedBlocks = [];
+            blockStartTime = null;
+            saveToStorage();
+            renderCurrentBlock();
+            startTimer();
+        }
+
+        function renderCurrentBlock() {
+            if (currentBlockIndex >= blocks.length) {
+                renderEndOfDay();
+                return;
+            }
+
+            const block = blocks[currentBlockIndex];
+            const mainContent = document.getElementById('mainContent');
+
+            let html = `
+                <div class="current-block">
+                    <div class="block-name">
+                        <span class="block-emoji">${block.emoji}</span>${block.name}
+                    </div>
+                    <div class="timer-section">
+                        <div class="elapsed-time" id="elapsedTime">00:00</div>
+                        <div class="time-label">ELAPSED TIME</div>
+                    </div>
+                    <div class="suggestions-box">
+                        <div class="suggestions-title">Quick checklist</div>
+                        <div class="suggestions-list">
+                            ${block.suggestions.map(s => `<div class="suggestion-item">${s}</div>`).join('')}
+                        </div>
+                    </div>
+                    <div class="block-buttons">
+                        <button class="btn btn-finish" onclick="finishBlock()">Finish Block</button>
+                    </div>
+                </div>
+
+                <div class="day-overview">
+                    <div class="overview-title">Today's Flow</div>
+                    <div class="blocks-timeline">
+            `;
+
+            blocks.forEach((b, idx) => {
+                let status = 'UPCOMING';
+                let classes = 'timeline-item upcoming';
+
+                if (idx < currentBlockIndex) {
+                    status = 'DONE';
+                    classes = 'timeline-item completed';
+                } else if (idx === currentBlockIndex) {
+                    status = 'NOW';
+                    classes = 'timeline-item active';
+                }
+
+                html += `
+                    <div class="${classes}" onclick="jumpToBlock(${idx})">
+                        <span class="item-emoji">${b.emoji}</span>
+                        <span class="item-name">${b.name}</span>
+                        <span class="item-status">${status}</span>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                </div>
+            `;
+
+            mainContent.innerHTML = html;
+            blockStartTime = Date.now();
+        }
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                if (blockStartTime && currentBlockIndex < blocks.length) {
+                    const elapsed = Math.floor((Date.now() - blockStartTime) / 1000);
+                    const minutes = Math.floor(elapsed / 60);
+                    const seconds = elapsed % 60;
+                    
+                    const display = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                    const elem = document.getElementById('elapsedTime');
+                    if (elem) elem.textContent = display;
+
+                    // Save state every 10 seconds
+                    if (elapsed % 10 === 0) {
+                        saveToStorage();
+                    }
+                }
+            }, 1000);
+        }
+
+        function finishBlock() {
+            if (currentBlockIndex >= blocks.length) return;
+            
+            document.getElementById('blockNotes').value = '';
+            document.getElementById('documentationModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('documentationModal').classList.remove('active');
+        }
+
+        document.getElementById('documentationForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const notes = document.getElementById('blockNotes').value;
+            
+            completedBlocks.push({
+                block: blocks[currentBlockIndex],
+                time: Math.floor((Date.now() - blockStartTime) / 1000),
+                notes: notes
+            });
+
+            saveToStorage();
+            celebrate('✨');
+            closeModal();
+
+            // Move to next block
+            setTimeout(() => {
+                currentBlockIndex++;
+                saveToStorage();
+                renderCurrentBlock();
+            }, 500);
+        });
+
+        function celebrate(emoji = '🎉') {
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.textContent = emoji;
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.top = '50%';
+                    confetti.style.fontSize = (10 + Math.random() * 20) + 'px';
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => confetti.remove(), 1500);
+                }, i * 50);
+            }
+        }
+
+        function renderEndOfDay() {
+            const mainContent = document.getElementById('mainContent');
+
+            let summaryHtml = '<div class="summary-container"><div class="summary-title">📊 Today\'s Summary</div>';
+            
+            completedBlocks.forEach((cb, idx) => {
+                const mins = Math.floor(cb.time / 60);
+                const secs = cb.time % 60;
+                const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+                
+                summaryHtml += `
+                    <div class="summary-item">
+                        <div><span class="summary-block-name">${cb.block.emoji} ${cb.block.name}</span> • ${timeStr}</div>
+                        ${cb.notes ? `<div style="color: var(--text-dim); font-size: 12px; margin-top: 6px;">${cb.notes}</div>` : ''}
+                    </div>
+                `;
+            });
+
+            summaryHtml += '</div>';
+
+            mainContent.innerHTML = `
+                <div class="end-of-day">
+                    <div class="celebration-emoji">🎯</div>
+                    <div class="end-message">You crushed it!</div>
+                    <div class="end-subtitle">All blocks completed. Amazing work today!</div>
+                </div>
+
+                ${summaryHtml}
+
+                <button class="btn-download" onclick="downloadSummary()">📥 Download Summary</button>
+
+                <button class="btn-reset" onclick="newDay()">Start New Day</button>
+            `;
+
+            clearInterval(timerInterval);
+        }
+
+        function downloadSummary() {
+            let text = `FLOW TRACKER - Daily Summary\n`;
+            text += `${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n`;
+            text += `\n${'='.repeat(50)}\n\n`;
+
+            let totalTime = 0;
+            completedBlocks.forEach((cb) => {
+                const mins = Math.floor(cb.time / 60);
+                const secs = cb.time % 60;
+                const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+                
+                text += `${cb.block.emoji} ${cb.block.name}\n`;
+                text += `Time: ${timeStr}\n`;
+                if (cb.notes) {
+                    text += `Notes: ${cb.notes}\n`;
+                }
+                text += `\n`;
+                
+                totalTime += cb.time;
+            });
+
+            const totalMins = Math.floor(totalTime / 60);
+            const totalSecs = totalTime % 60;
+            text += `${'='.repeat(50)}\n`;
+            text += `Total Time: ${totalMins}m ${totalSecs}s\n`;
+            text += `Blocks Completed: ${completedBlocks.length}/${blocks.length}\n`;
+
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `flow-summary-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            celebrate('📥');
+        }
+
+        function newDay() {
+            currentBlockIndex = 0;
+            blockStartTime = null;
+            completedBlocks = [];
+            blockElapsedTime = 0;
+            dayStarted = false;
+            selectedStartBlock = 0;
+            saveToStorage();
+            renderStartDay();
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
